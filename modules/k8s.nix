@@ -317,6 +317,18 @@ in {
       description = "Generated kubernetes JSON file";
       type = types.package;
     };
+
+    notHashed = {
+      generated = mkOption {
+        description = "Generated kubernetes list object (without the kubenix/hash label)";
+        type = types.attrs;
+      };
+
+      result = mkOption {
+        description = "Generated kubernetes JSON file (without the kubenix/hash label)";
+        type = types.package;
+      };
+    };
   };
 
   config = {
@@ -400,5 +412,14 @@ in {
 
     kubernetes.result =
       pkgs.writeText "kubenix-generated.json" (builtins.toJSON cfg.generated);
+
+    kubernetes.notHashed.generated = k8s.mkList {
+      items = config.kubernetes.objects;
+      labels."kubenix/project-name" = config.kubenix.project;
+      labels."kubenix/k8s-version" = config.kubernetes.version;
+    };
+
+    kubernetes.notHashed.result =
+      pkgs.writeText "kubenix-generated-not-hashed.json" (builtins.toJSON cfg.notHashed.generated);
   };
 }
