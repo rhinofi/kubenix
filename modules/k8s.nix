@@ -308,9 +308,20 @@ in {
       default = [];
     };
 
+    processedObjects = mkOption {
+      description = "List of generated kubernetes objects after objectPostProcessingFunc has been applied";
+      type = types.listOf types.attrs;
+    };
+
     generated = mkOption {
       description = "Generated kubernetes list object";
       type = types.attrs;
+    };
+
+    objectPostProcessingFunc = mkOption {
+      description = "Function applied to k8s objects in the generated list";
+      type = types.functionTo (types.listOf types.attrs);
+      default = x: x;
     };
 
     result = mkOption {
@@ -400,12 +411,14 @@ in {
     }) cfg.imports));
 
     kubernetes.objects = flatten (mapAttrsToList (_: type:
-      mapAttrsToList (name: resource: moduleToAttrs resource)
-        cfg.api.resources.${type.group}.${type.version}.${type.kind}
+        mapAttrsToList (name: resource: moduleToAttrs resource)
+          cfg.api.resources.${type.group}.${type.version}.${type.kind}
     ) cfg.api.types);
 
+    kubernetes.processedObjects = cfg.objectPostProcessingFunc config.kubernetes.objects;
+
     kubernetes.generated = k8s.mkHashedList {
-      items = config.kubernetes.objects;
+      items = config.kubernetes.processedObjects;
       labels."kubenix/project-name" = config.kubenix.project;
       labels."kubenix/k8s-version" = config.kubernetes.version;
     };
@@ -414,7 +427,7 @@ in {
       pkgs.writeText "kubenix-generated.json" (builtins.toJSON cfg.generated);
 
     kubernetes.notHashed.generated = k8s.mkList {
-      items = config.kubernetes.objects;
+      items = config.kubernetes.processedObjects;
       labels."kubenix/project-name" = config.kubenix.project;
       labels."kubenix/k8s-version" = config.kubernetes.version;
     };
