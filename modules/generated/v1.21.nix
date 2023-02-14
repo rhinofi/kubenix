@@ -72,7 +72,7 @@ let
 
   submoduleForDefinition = ref: resource: kind: group: version:
     let apiVersion = if group == "core" then version else "${group}/${version}";
-    in types.submodule ({ name, ... }: {
+    in types.nullOr (types.submodule ({ name, ... }: {
       imports = getDefaults resource group version kind;
       options = definitions."${ref}".options;
       config = mkMerge [
@@ -85,7 +85,7 @@ let
           metadata.name = mkOptionDefault name;
         }
       ];
-    });
+    })) ;
 
   coerceAttrsOfSubmodulesToListByKey = ref: mergeKey:
     (types.coercedTo (types.listOf (submoduleOf ref)) (mergeValuesByKey mergeKey)

@@ -399,10 +399,10 @@ in {
       resources.${group}.${version}.${kind}.${name} = object;
     }) cfg.imports));
 
-    kubernetes.objects = flatten (mapAttrsToList (_: type:
+    kubernetes.objects = builtins.filter (x: x != null) (flatten (mapAttrsToList (_: type:
       mapAttrsToList (name: resource: moduleToAttrs resource)
         cfg.api.resources.${type.group}.${type.version}.${type.kind}
-    ) cfg.api.types);
+    ) cfg.api.types));
 
     kubernetes.generated = k8s.mkHashedList {
       items = config.kubernetes.objects;
