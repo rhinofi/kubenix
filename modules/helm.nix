@@ -73,8 +73,20 @@ in {
             default = true;
           };
 
+          objectsRaw = mkOption {
+            description = "Generated kubernetes objects, as output by the chart";
+            type = types.listOf types.attrs;
+            default = [];
+          };
+
+          objectPostProcessingFunc = mkOption {
+            description = "Function applied to k8s objects in the generated list";
+            type = types.functionTo (types.listOf types.attrs);
+            default = x: x;
+          };
+
           objects = mkOption {
-            description = "Generated kubernetes objects";
+            description = "Generated kubernetes objects, after passing through objectPostProcessingFunc";
             type = types.listOf types.attrs;
             default = [];
           };
@@ -84,7 +96,7 @@ in {
           metadata.namespace = config.namespace;
         }];
 
-        config.objects = importJSON (helm.chart2json {
+        config.objectsRaw = importJSON (helm.chart2json {
           inherit (config) chart name namespace values kubeVersion;
         });
       }));
@@ -104,7 +116,7 @@ in {
         "${apiVersion.group}"."${apiVersion.version}".${object.kind}."${name}" = mkMerge ([
           object
         ] ++ instance.overrides);
-      }) instance.objects
+      }) (instance.objectPostProcessingFunc instance.objectsRaw)
     ) cfg.instances));
   };
 }
