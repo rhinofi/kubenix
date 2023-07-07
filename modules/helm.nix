@@ -96,9 +96,12 @@ in {
           metadata.namespace = config.namespace;
         }];
 
-        config.objectsRaw = importJSON (helm.chart2json {
-          inherit (config) chart name namespace values kubeVersion;
-        });
+        config = {
+          objectsRaw = importJSON (helm.chart2json {
+            inherit (config) chart name namespace values kubeVersion;
+          });
+          objects = config.objectPostProcessingFunc config.objectsRaw;
+        };
       }));
       default = {};
     };
@@ -116,7 +119,7 @@ in {
         "${apiVersion.group}"."${apiVersion.version}".${object.kind}."${name}" = mkMerge ([
           object
         ] ++ instance.overrides);
-      }) (instance.objectPostProcessingFunc instance.objectsRaw)
+      }) instance.objects
     ) cfg.instances));
   };
 }
