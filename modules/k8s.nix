@@ -202,7 +202,7 @@ in {
     version =
       let
         minVersion = 19; # k8s v1.19
-        maxVersion = 23; # k8s v1.23
+        maxVersion = 27; # k8s v1.27
 
         supportedVersions =
           map
