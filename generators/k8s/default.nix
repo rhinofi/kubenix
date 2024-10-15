@@ -273,11 +273,16 @@ let
     let
       getDefaults = resource: group: version: kind:
         catAttrs "default" (filter (default:
-          (default.resource == null || default.resource == resource) &&
-          (default.group == null || default.group == group) &&
-          (default.version == null || default.version == version) &&
-          (default.kind == null || default.kind == kind)
-        ) config.defaults);
+          default.ref == null
+          && (default.resource == null || default.resource == resource)
+          && (default.group == null || default.group == group)
+          && (default.version == null || default.version == version)
+          && (default.kind == null || default.kind == kind)) config.defaults);
+
+      getDefaultsForRef = ref: catAttrs "default" (filter
+        (default: default.ref == ref)
+        config.defaults
+      );
 
       types = lib.types // rec {
         str = mkOptionType {
@@ -323,6 +328,7 @@ let
         values);
 
       submoduleOf = ref: types.submodule ({name, ...}: {
+        imports = getDefaultsForRef ref;
         options = definitions."''${ref}".options or {};
         config = definitions."''${ref}".config or {};
       });
@@ -333,6 +339,7 @@ let
           then toInt name
           else name;
       in {
+        imports = getDefaultsForRef ref;
         options = definitions."''${ref}".options;
         config = definitions."''${ref}".config // {
           ''${mergeKey} = mkOverride 1002 (convertName name);
@@ -342,7 +349,9 @@ let
       submoduleForDefinition = ref: resource: kind: group: version: let
         apiVersion = if group == "core" then version else "''${group}/''${version}";
       in types.submodule ({name, ...}: {
-        imports = getDefaults resource group version kind;
+        imports =
+          (getDefaults resource group version kind)
+          ++ (getDefaultsForRef ref);
         options = definitions."''${ref}".options;
         config = mkMerge [
           definitions."''${ref}".config

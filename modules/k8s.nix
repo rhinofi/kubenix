@@ -11,6 +11,7 @@ let
 
   getDefaults = resource: group: version: kind:
     catAttrs "default" (filter (default:
+      default.ref == null &&
       (resource == null || default.resource == null || default.resource == resource) &&
       (default.group == null || default.group == group) &&
       (default.version == null || default.version == version) &&
@@ -59,6 +60,57 @@ let
               type = types.nullOr types.str;
               default = null;
             };
+
+            ref = mkOption {
+              description = "Full api ref of api object to apply default to. Mutually exclusive with resource, group, kind and version.";
+              type = types.nullOr types.str;
+              example = "io.k8s.api.core.v1.Container";
+              default = null;
+            };
+
+            propagate = mkOption {
+              description = "Whether to propagate defaults";
+              type = types.bool;
+              default = false;
+            };
+
+            default = mkOption {
+              description = "Default to apply";
+              type = types.unspecified;
+              default = {};
+            };
+          };
+        }));
+        default = [];
+        apply = unique;
+      };
+
+      definitionDefaults = mkOption {
+        description = "Defaults defaults to apply to resources";
+        type = types.listOf (types.submodule ({config, ...}: {
+          options = {
+            ref = mkOption {
+              description = "Group to apply default to (all by default)";
+              type = types.str;
+            };
+
+            # version = mkOption {
+            #   description = "Version to apply default to (all by default)";
+            #   type = types.nullOr types.str;
+            #   default = null;
+            # };
+
+            # kind = mkOption {
+            #   description = "Kind to apply default to (all by default)";
+            #   type = types.nullOr types.str;
+            #   default = null;
+            # };
+
+            # resource = mkOption {
+            #   description = "Resource to apply default to (all by default)";
+            #   type = types.nullOr types.str;
+            #   default = null;
+            # };
 
             propagate = mkOption {
               description = "Whether to propagate defaults";
@@ -372,6 +424,9 @@ in {
             }
           ]
         );
+        kubernetes.api.definitionDefaults =
+          filter (default: default.propagate) cfg.api.definitionDefaults
+        ;
       };
     }];
 
