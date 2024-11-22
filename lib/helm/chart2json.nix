@@ -1,4 +1,4 @@
-{ stdenvNoCC, lib, kubernetes-helm, gawk, remarshal, jq }:
+{ stdenvNoCC, lib, kubernetes-helm, gawk, remarshal, jq, yq }:
 
 with lib;
 
@@ -34,7 +34,7 @@ in stdenvNoCC.mkDerivation {
     # join multiple yaml files in jsonl file
     for file in ./resource-*.yaml
     do
-      remarshal -i $file -if yaml -of json >>resources.jsonl
+      yq -c . $file >> resources.jsonl
     done
 
     # convert jsonl file to json array, remove null values and write to $out
@@ -47,5 +47,5 @@ in stdenvNoCC.mkDerivation {
         .
       end)' > $out
   '';
-  nativeBuildInputs = [ kubernetes-helm gawk remarshal jq ];
+  nativeBuildInputs = [ kubernetes-helm gawk yq jq ];
 }
