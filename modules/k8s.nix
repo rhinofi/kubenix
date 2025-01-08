@@ -451,19 +451,22 @@ in {
     }] ++
 
     # import of yaml files
-    (map (i: let
-      # load yaml file
-      object = loadYAML i;
-      groupVersion = splitString "/" object.apiVersion;
-      name = object.metadata.name;
-      version = last groupVersion;
-      group =
-        if version == (head groupVersion)
-        then "core" else head groupVersion;
-      kind = object.kind;
-    in {
-      resources.${group}.${version}.${kind}.${name} = object;
-    }) cfg.imports));
+    (concatMap (
+      path:
+      map (
+        object:
+        let
+          groupVersion = splitString "/" object.apiVersion;
+          name = object.metadata.name;
+          version = last groupVersion;
+          group = if version == (head groupVersion) then "core" else head groupVersion;
+          kind = object.kind;
+        in
+        {
+          resources.${group}.${version}.${kind}.${name} = object;
+        }
+      ) (loadYAMLasList path)
+    ) cfg.imports));
 
     kubernetes.objectsRaw = flatten (mapAttrsToList (_: type:
         mapAttrsToList (name: resource: moduleToAttrs resource)

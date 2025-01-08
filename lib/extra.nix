@@ -21,8 +21,11 @@ rec {
 
     else mkOverride priority value;
 
-  loadYAML = path: importJSON (pkgs.runCommand "yaml-to-json" {
-  } "${pkgs.remarshal}/bin/remarshal -i ${path} -if yaml -of json > $out");
+  loadYAMLasList =
+    path:
+    importJSON (
+      pkgs.runCommand "yaml-to-json-array" {} "${lib.getExe pkgs.yq} -s . ${path} > $out"
+    );
 
   toYAML = config: builtins.readFile (pkgs.runCommand "to-yaml" {
     buildInputs = [pkgs.remarshal];
