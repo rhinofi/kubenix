@@ -44,6 +44,27 @@ rec {
     value = acc.value + (toInt char) * (exp 8 acc.i);
   }) {i = 0; value = 0;} (stringToCharacters value)).value;
 
+  # A custom type that composes function definitions.
+  # composedFunction
+  composedFunction = lib.mkOptionType {
+    name = "composedFunction";
+    description = "A function that is the composition of all defined functions. Assums order of composition does not matter.";
+
+    check = lib.isFunction;
+
+    # The core logic:
+    # 1. 'defs' is a list of all definitions (e.g., from different modules),
+    #    sorted by priority (low to high).
+    # 2. We extract the function values.
+    # 3. We return a *new* function that takes an argument 'initial'
+    #    and pipes it through all defined functions.
+    merge = loc: defs:
+      let
+        funcs = map (d: d.value) defs;
+      in
+      initial: lib.pipe initial funcs;
+  };
+
   submoduleWithSpecialArgs = opts: specialArgs:
     let
       opts' = toList opts;

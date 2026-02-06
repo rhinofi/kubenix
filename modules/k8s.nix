@@ -371,8 +371,8 @@ in {
     };
 
     objectPostProcessingFunc = mkOption {
-      description = "Function applied to k8s objects in the generated list";
-      type = types.functionTo (types.listOf types.attrs);
+      description = "Function applied to k8s objects in the generated list. Multiple definitions are composed.";
+      type = lib.composedFunction;
       default = x: x;
     };
 
